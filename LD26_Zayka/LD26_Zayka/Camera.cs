@@ -14,14 +14,27 @@ namespace LD26_Zayka
         public Matrix InvView { get { return invViewMatrix; } }
         float speed = 300;
         public float currentscale = 1;
-        public Vector2 Position { get { return new Vector2(-viewMatrix.Translation.X, -viewMatrix.Translation.Y); } }
+        static Vector2 center = new Vector2(Game1.screenWidth / 2, Game1.screenHeight / 2);
+        public Vector2 Position
+        {
+            get
+            {
+                return new Vector2(-viewMatrix.Translation.X, -viewMatrix.Translation.Y);
+            }
+            set
+            {
+
+                viewMatrix = Matrix.CreateTranslation(new Vector3(-(value-center), 0));
+            }
+        }
+        
 
         
 
         public Camera()
         {
             viewMatrix = Matrix.Identity;
-            Vector2  center = new Vector2(-Game1.screenWidth / 2, -Game1.screenHeight / 2);
+            Vector2  center = new Vector2(0, 0);
             View = Matrix.CreateTranslation(new Vector3(-center, 0));
 
         }
