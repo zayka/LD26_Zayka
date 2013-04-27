@@ -24,7 +24,14 @@ namespace LD26_Zayka
         public Vector2 PrevPos { get { return prevPos; } set { prevPos = value; } }
         public Vector2 Origin { get { return sprite.Origin; } }
         public float Speed { get { return speed; } set { speed = value; } }
-        public bool isOnScreen { get { return Pos == Vector2.Clamp(Pos, new Vector2(0, 0), new Vector2(Game1.screenWidth, Game1.screenHeight)); } }
+        public bool isOnScreen 
+        { 
+            get 
+            {
+                float cameraOffset = Cnt.game.Camera.View.Translation.Y;
+                return Pos == Vector2.Clamp(Pos, new Vector2(0, -cameraOffset), new Vector2(Game1.screenWidth, Game1.screenHeight - cameraOffset)); 
+            } 
+        }
         public Color[] CurrentData { get { return sprite.GetCurrentData(); } }
 
 
@@ -48,7 +55,7 @@ namespace LD26_Zayka
 
         public virtual void Draw(SpriteBatch sb)
         {
-            sprite.Draw(sb, Pos);
+            sprite.Draw(sb, Pos, Color.White);
         }
 
     }

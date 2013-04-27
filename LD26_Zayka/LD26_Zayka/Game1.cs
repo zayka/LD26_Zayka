@@ -30,9 +30,10 @@ namespace LD26_Zayka
         float G = 2000;
         GamePadState gs;
 
-        Player player;
+        public Player player;
         //Platform platform;
         List<Platform> allPlatforms = new List<Platform>();
+        List<Bonus> BonusList = new List<Bonus>();
 
         public Game1()
         {
@@ -43,8 +44,8 @@ namespace LD26_Zayka
 
 
             IsMouseVisible = true;
-            //IsFixedTimeStep = false;
-            //graphics.SynchronizeWithVerticalRetrace = false;
+            IsFixedTimeStep = false;
+            graphics.SynchronizeWithVerticalRetrace = false;
 
         }
 
@@ -97,9 +98,7 @@ namespace LD26_Zayka
                 allPlatforms.Add(platform);
                 platform = new Platform(new Vector2(i+200, 600-100), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));
                 allPlatforms.Add(platform);
-            }
-            
-            
+            }                       
         }
    
         protected override void UnloadContent() { }
@@ -128,19 +127,33 @@ namespace LD26_Zayka
             if (input.IsLeftButtonClick()) player.Jump();
 
             if (input.IsNewKeyPressed(Keys.Q)) allPlatforms.Clear();
-            if (input.IsNewKeyPressed(Keys.D1)) GenerateLine();
+            if (input.IsNewKeyPressed(Keys.D1)) 
+            {
+                Bonus b = new Bonus(new Vector2(100, 200), new AnimSprite(Content.Load<Texture2D>("bonuses"), 20, 20, 1, 100,0), BonusType.Jump);
+                BonusList.Add(b);
+            }
 
-            gs = GamePad.GetState(PlayerIndex.One);
+            if (input.IsNewKeyPressed(Keys.D2))
+            {
+                Bonus b = new Bonus(new Vector2(200, 200), new AnimSprite(Content.Load<Texture2D>("bonuses"), 20, 20, 1, 100, 20), BonusType.Speed);
+                BonusList.Add(b);
+            }           
 
             R=Collision(R*elapsed*elapsed,player.Velocity*elapsed)/elapsed/elapsed;
             
            // player.Pos -= new Vector2(0, -G*elapsed);
             player.Update(gameTime,R);
 
-            foreach (var platform in allPlatforms)
+            for (int i = 0; i < allPlatforms.Count; i++)
             {
-                platform.Update(gameTime);
+                if (allPlatforms[i].isOnScreen) allPlatforms[i].Update(gameTime);
+                if (allPlatforms[i].toRemove) allPlatforms.RemoveAt(i--);
             }
+
+            for (int i = 0; i < BonusList.Count; i++)
+            {
+                if (BonusList[i].isOnScreen) BonusList[i].Update(gameTime);                
+            }  
 
             if (player.Pos.Y-screenHeight/2-1000<lastline) GenerateLine();
             camera.Position = new Vector2(screenWidth/2,player.Pos.Y-100);
@@ -154,15 +167,21 @@ namespace LD26_Zayka
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            device.Clear(Color.Black);
+            device.Clear(Color.CornflowerBlue);
 
 
             spriteBatch.Begin(SpriteSortMode.Deferred,BlendState.AlphaBlend,null,null,null,null,camera.View);
             player.Draw(spriteBatch);
             foreach (var platform in allPlatforms)
             {
-                platform.Draw(spriteBatch);
+                if (platform.isOnScreen) platform.Draw(spriteBatch);
             }
+
+            for (int i = 0; i < BonusList.Count; i++)
+            {
+                if (BonusList[i].isOnScreen) BonusList[i].Draw(spriteBatch);
+            } 
+
             spriteBatch.End();
 
 
@@ -191,6 +210,7 @@ namespace LD26_Zayka
             // +-5 - player bounds in texture
             foreach (var platform in allPlatforms)
             {
+                if (!platform.isOnScreen) continue;
                 // h
                 player.Pos = player.Pos + new Vector2(dx, 0);
                 if (PixelCollision(platform, player))
@@ -211,11 +231,11 @@ namespace LD26_Zayka
                     
                     isHitY = true;
                     player.HitY();
-                    
+
                     if (Math.Sign(dy) > 0)
-                    { dy = platform.Pos.Y - platform.Origin.Y - (prevPos.Y + 5); player.Land(); }
+                    { dy = platform.Pos.Y - platform.Origin.Y - (prevPos.Y + 5); player.Land(); platform.Crash(); }
                     else
-                        dy = platform.Pos.Y + platform.Origin.Y - (prevPos.Y - 5);
+                    { dy = platform.Pos.Y + platform.Origin.Y - (prevPos.Y - 5); platform.Crash(); }
                 }
                 
                 player.Pos = prevPos;
@@ -266,7 +286,11 @@ namespace LD26_Zayka
             {
                 if (rnd.Next(100) > 50+x)
                 {
-                    platform = new Platform(new Vector2(i, lastline), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));
+                    
+                    if (rnd.Next(100) > 50) 
+                    platform = new Platform(new Vector2(i, lastline), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100),false);
+                    else
+                        platform = new Platform(new Vector2(i, lastline), new AnimSprite(Content.Load<Texture2D>("platform2"), 60, 20, 1, 100), true);
                     allPlatforms.Add(platform);
                 }
 

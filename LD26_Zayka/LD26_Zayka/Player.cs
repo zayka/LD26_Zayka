@@ -8,12 +8,15 @@ using Microsoft.Xna.Framework.Input;
 
 namespace LD26_Zayka
 {
-    class Player:GameObject
+    public class Player:GameObject
     {
         InputState input;
         public float maxSpeed;
+        public float maxJump = 800;
         bool isJumping=false;
         bool landing = false;
+        public float hitpoints;
+        public float maxHitpoints;
 
         public Vector2 Velocity { get { return velocity; } }
 
@@ -48,7 +51,7 @@ namespace LD26_Zayka
         {
             if (!isJumping)
             {
-                velocity.Y -= 800;
+                velocity.Y -= maxJump;
                 isJumping = true;
             }
         }

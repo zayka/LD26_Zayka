@@ -19,6 +19,7 @@ namespace LD26_Zayka
         int dimX;
         int dimY;
         public Vector2 Origin { get { return new Vector2(width / 2, height / 2); } }
+        int startY;
 
         public int Width
         {
@@ -29,7 +30,7 @@ namespace LD26_Zayka
             get { return height; }
         }
 
-        public AnimSprite(Texture2D main, int width, int height, int totalframes,  double frameTime)
+        public AnimSprite(Texture2D main, int width, int height, int totalframes,  double frameTime, int startY=0)
         {
             this.main = main;
             this.maxFrame = totalframes;
@@ -38,6 +39,7 @@ namespace LD26_Zayka
             this.height = height;
             this.dimX = main.Width / width;
             this.dimY = totalframes / dimX+1;
+            this.startY = startY;
         }
 
         public void Update(GameTime gt)
@@ -51,15 +53,16 @@ namespace LD26_Zayka
         }
 
 
-        public void Draw(SpriteBatch sb, Vector2 pos, float angle=0,bool right=false)
+        public void Draw(SpriteBatch sb, Vector2 pos,Color c,float angle=0,bool right=false)
         {
             //Vector2 origin = new Vector2(width / 2, height / 2);
-
+           
             int x = curframe % dimX * height;
-            int y = curframe / dimX * width;
+            int y = curframe / dimX * width+startY;
             SpriteEffects sp = right ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-
-            sb.Draw(main, pos , new Rectangle(x, y, width, height), Color.White, angle, Origin, 1, sp, 1);            
+            
+            sb.Draw(main, pos , new Rectangle(x, y, width, height), c, angle, Origin, 1, sp, 0);
+            
         }
 
 
