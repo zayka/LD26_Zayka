@@ -38,26 +38,31 @@ namespace LD26_Zayka
             {
                 case BonusType.Jump:
                     getBonus = getJump;
-                    amount = 100;
+                    amount = 15;
                     getText = "+Jump";
+                    sprite.startY = 0;
                     break;
                 case BonusType.Speed:
                     getBonus = getSpeed;
-                    amount = 100;
+                    amount = 10;
                     getText = "+speed";
+                    sprite.startY = 40;
                     break;
                 case BonusType.Hp:
                     getBonus = getHP;
                     amount = 25;
                     getText = "+HP";
+                    sprite.startY = 80;
                     break;
                 case BonusType.Jetpack:
                     break;                
                 default:
                     break;
             }
+            //this.pos = pos;
+            originPosY = pos.Y;
         }
-
+        
         public override void Draw(SpriteBatch sb)
         {
             if (!prepareToremove) sprite.Draw(sb, Pos, Color.White);
@@ -73,7 +78,7 @@ namespace LD26_Zayka
             if (prepareToremove) showTextTime -= (float)gt.ElapsedGameTime.TotalSeconds;
 
             angle += MathHelper.Pi * (float)gt.ElapsedGameTime.TotalSeconds;
-            pos.Y = originPosY - 20 * (float)Math.Sin(angle);
+            pos.Y = originPosY - 10 * (float)Math.Sin(angle);
 
             if (showTextTime < 0 && prepareToremove) toRemove = true;
         }
@@ -94,12 +99,12 @@ namespace LD26_Zayka
         }
         void getJump(Player pl)
         {
-            pl.maxSpeed += amount;
+            pl.maxJump += amount;
             //pl.hitpoints = MathHelper.Clamp(pl.hitpoints, 0, pl.maxHitpoints);
         }
         void getSpeed(Player pl)
         {
-            pl.maxJump += amount;
+            pl.maxSpeed += amount;
             //pl.hitpoints = MathHelper.Clamp(pl.hitpoints, 0, pl.maxHitpoints);
         }
     }

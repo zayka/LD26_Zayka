@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using ZLight;
 
 namespace LD26_Zayka
 {
@@ -33,7 +34,8 @@ namespace LD26_Zayka
             } 
         }
         public Color[] CurrentData { get { return sprite.GetCurrentData(); } }
-
+        public ZLight.ConvexHull hull;
+        public Light light;
 
         public GameObject(Vector2 pos, AnimSprite sprite,float speed = 0)
         {
@@ -43,14 +45,23 @@ namespace LD26_Zayka
             this.Pos = pos;
             this.Dir = Vector2.Zero;
             this.speed = speed;
+
+            List<Vector2> list = new List<Vector2>() { new Vector2(-Width / 2, -Height / 2), new Vector2(Width / 2, -Height / 2), new Vector2(Width / 2, Height / 2), new Vector2(-Width/2, Height/2) };
+            hull = new ConvexHull(list, Vector2.Zero);
+            hull.Pos = pos;
+            light.pos = pos;
+            light.radius = 1200;
         }
 
         public virtual void Update(GameTime gt)
         {
+            light.pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
+            hull.Pos =  new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
             PrevPos = Pos;
             sprite.Update(gt);
             //Pos += Dir * speed * (float)gt.ElapsedGameTime.TotalSeconds;
             Pos += velocity * (float)gt.ElapsedGameTime.TotalSeconds;
+            
         }
 
         public virtual void Draw(SpriteBatch sb)

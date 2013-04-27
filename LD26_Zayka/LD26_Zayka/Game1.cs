@@ -8,6 +8,8 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using ZLight;
+using System.IO;
 
 namespace LD26_Zayka
 {
@@ -28,12 +30,14 @@ namespace LD26_Zayka
         public static Random rnd = new Random(111222);
         int lastline=400;
         float G = 2000;
-        GamePadState gs;
+        ZLights zl;
+        Texture2D bg;
 
         public Player player;
         //Platform platform;
         List<Platform> allPlatforms = new List<Platform>();
         List<Bonus> BonusList = new List<Bonus>();
+        bool lightsON = false;
 
         public Game1()
         {
@@ -43,9 +47,9 @@ namespace LD26_Zayka
             graphics.PreferredBackBufferHeight = screenHeight;
 
 
-            IsMouseVisible = true;
-            IsFixedTimeStep = false;
-            graphics.SynchronizeWithVerticalRetrace = false;
+            //IsMouseVisible = true;
+            //IsFixedTimeStep = false;
+            //graphics.SynchronizeWithVerticalRetrace = false;
 
         }
 
@@ -66,7 +70,7 @@ namespace LD26_Zayka
         /// </summary>
         protected override void LoadContent()
         {
-            
+            zl = new ZLights(this);
             spriteBatch = new SpriteBatch(GraphicsDevice);
             Cnt.game = this;
             device = graphics.GraphicsDevice;
@@ -76,7 +80,7 @@ namespace LD26_Zayka
 #if DEBUG
             Components.Add(new FPSCounter.FPSCounter(this, font, spriteBatch));     
 #endif
-
+            bg = Content.Load<Texture2D>("mainBG");
             LoadStartPlatform();
             while (lastline > 0)
             {
@@ -111,6 +115,7 @@ namespace LD26_Zayka
         protected override void Update(GameTime gameTime)
         {
             input.Update();
+            camera.Position = new Vector2(screenWidth / 2, player.Pos.Y - 100);
             float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (elapsed == 0) return;
             if (input.IsKeyPressed(Keys.Escape)) this.Exit();
@@ -121,21 +126,20 @@ namespace LD26_Zayka
             if (input.IsKeyPressed(Keys.D)) player.MoveRight();
             else
                 if (input.IsKeyPressed(Keys.A)) player.MoveLeft();
-                else player.Stop();            
+                else player.Stop();
             if (input.IsNewKeyPressed(Keys.Space)) player.Jump();
-            if (input.IsNewKeyPressed(Keys.E)) player.Jump();
             if (input.IsLeftButtonClick()) player.Jump();
 
-            if (input.IsNewKeyPressed(Keys.Q)) allPlatforms.Clear();
+            if (input.IsNewKeyPressed(Keys.Q)) { lightsON ^= true; };
             if (input.IsNewKeyPressed(Keys.D1)) 
             {
-                Bonus b = new Bonus(new Vector2(100, 200), new AnimSprite(Content.Load<Texture2D>("bonuses"), 20, 20, 1, 100,0), BonusType.Jump);
+                Bonus b = new Bonus(new Vector2(100, 200), new AnimSprite(Content.Load<Texture2D>("bonuses"), 40, 40, 1, 100,0), BonusType.Jump);
                 BonusList.Add(b);
             }
 
             if (input.IsNewKeyPressed(Keys.D2))
             {
-                Bonus b = new Bonus(new Vector2(200, 200), new AnimSprite(Content.Load<Texture2D>("bonuses"), 20, 20, 1, 100, 20), BonusType.Speed);
+                Bonus b = new Bonus(new Vector2(200, 200), new AnimSprite(Content.Load<Texture2D>("bonuses"), 40, 40, 1, 100, 20), BonusType.Speed);
                 BonusList.Add(b);
             }           
 
@@ -152,12 +156,13 @@ namespace LD26_Zayka
 
             for (int i = 0; i < BonusList.Count; i++)
             {
-                if (BonusList[i].isOnScreen) BonusList[i].Update(gameTime);                
+               BonusList[i].Update(gameTime);
+               if (BonusList[i].toRemove) BonusList.RemoveAt(i--);
             }  
 
             if (player.Pos.Y-screenHeight/2-1000<lastline) GenerateLine();
-            camera.Position = new Vector2(screenWidth/2,player.Pos.Y-100);
 
+            CollisionBonus();
             base.Update(gameTime);
         }
 
@@ -167,21 +172,67 @@ namespace LD26_Zayka
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            device.Clear(Color.CornflowerBlue);
-
-
-            spriteBatch.Begin(SpriteSortMode.Deferred,BlendState.AlphaBlend,null,null,null,null,camera.View);
-            player.Draw(spriteBatch);
-            foreach (var platform in allPlatforms)
+            if (lightsON)
             {
-                if (platform.isOnScreen) platform.Draw(spriteBatch);
+                GraphicsDevice.Clear(Color.CornflowerBlue);
+                List<ConvexHull> chList = new List<ConvexHull>();
+                List<Light> LList = new List<Light>();
+                foreach (var plt in allPlatforms)
+                {
+                    chList.Add(plt.hull);
+                }
+                chList.Add(player.hull);
+                LList.Add(player.light);
+                Texture2D shadows = zl.RenderShadows(chList, LList, 0.7f);
+
+
+                GraphicsDevice.SetRenderTarget(null);
+
+                GraphicsDevice.Clear(new Color(0, 255, 0, 255));
+
+
+                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, camera.View);
+                //spriteBatch.Begin();
+                spriteBatch.Draw(bg, new Vector2(0,-camera.View.Translation.Y), Color.White);
+                spriteBatch.Draw(shadows, new Vector2(0, -camera.View.Translation.Y), Color.White);
+                player.Draw(spriteBatch);
+                foreach (var platform in allPlatforms)
+                {
+                    if (platform.isOnScreen) platform.Draw(spriteBatch);
+                }
+
+                for (int i = 0; i < BonusList.Count; i++)
+                {
+                    BonusList[i].Draw(spriteBatch);
+                }
+                spriteBatch.End();
+            }
+            else
+            {
+                GraphicsDevice.SetRenderTarget(null);
+                GraphicsDevice.Clear(Color.Gray);
+                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, camera.View);
+                spriteBatch.Draw(bg, Vector2.Zero, Color.White);              
+                player.Draw(spriteBatch);
+                foreach (var platform in allPlatforms)
+                {
+                    if (platform.isOnScreen) platform.Draw(spriteBatch);
+                }
+
+                for (int i = 0; i < BonusList.Count; i++)
+                {
+                    BonusList[i].Draw(spriteBatch);
+                }
+                spriteBatch.End();
             }
 
+            //hud
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, camera.View);
             for (int i = 0; i < BonusList.Count; i++)
             {
-                if (BonusList[i].isOnScreen) BonusList[i].Draw(spriteBatch);
-            } 
-
+                BonusList[i].DrawText(spriteBatch);
+            }
+            
             spriteBatch.End();
 
 
@@ -189,10 +240,9 @@ namespace LD26_Zayka
 
 #if DEBUG
             spriteBatch.Begin();
-            spriteBatch.DrawString(font, "velocity"+player.Velocity, new Vector2(10, 0 * 12), Color.LightGreen);
-            spriteBatch.DrawString(font, "pos"+player.Pos, new Vector2(10, 1 * 12), Color.LightGreen);
-            spriteBatch.DrawString(font, "lastline" + lastline, new Vector2(10, 2 * 12), Color.LightGreen);
-            spriteBatch.DrawString(font, "gs" + gs.ToString(), new Vector2(10, 3 * 12), Color.LightGreen);
+            spriteBatch.DrawString(font, "velocity" + player.Velocity, new Vector2(10, 0 * 12), Color.LightGreen);
+            spriteBatch.DrawString(font, "pos" + player.Pos, new Vector2(10, 1 * 12), Color.LightGreen);
+            spriteBatch.DrawString(font, "lastline" + lastline, new Vector2(10, 2 * 12), Color.LightGreen);           
             spriteBatch.End();
 #endif
             base.Draw(gameTime);
@@ -246,7 +296,21 @@ namespace LD26_Zayka
             else return Rdxdy;
 
         }
-        
+
+        void CollisionBonus()
+        {
+            foreach (var bonus in BonusList)
+            {
+                //if (bonus.isOnScreen)
+                if (bonus.rect.Intersects(player.rect))
+                {
+                    if (PixelCollision(bonus, player))
+                    {
+                        bonus.Interact(player);
+                    }
+                }
+            }
+        }
         public static bool PixelCollision(GameObject first, GameObject second)
         {
             Rectangle firstRect = first.rect;
@@ -292,11 +356,44 @@ namespace LD26_Zayka
                     else
                         platform = new Platform(new Vector2(i, lastline), new AnimSprite(Content.Load<Texture2D>("platform2"), 60, 20, 1, 100), true);
                     allPlatforms.Add(platform);
+                    if (rnd.Next(100) > 57)
+                    {
+                        Bonus b = new Bonus(new Vector2(rnd.Next(screenWidth), lastline-30), new AnimSprite(Content.Load<Texture2D>("bonuses"), 40, 40, 1, 100, 20));
+                        BonusList.Add(b);
+                    }
                 }
 
             }
             lastline-=100;
         }
 
+        void TextureToFile(Texture2D tex, string filename)
+        {
+            Stream stream = new MemoryStream();
+            Color[] colors = new Color[tex.Width * tex.Height];
+            tex.GetData<Color>(colors);
+
+            System.Drawing.Bitmap bmp = new System.Drawing.Bitmap(tex.Width, tex.Height);
+            System.Drawing.Rectangle rect = new System.Drawing.Rectangle(0, 0, bmp.Width, bmp.Height);
+            System.Drawing.Imaging.PixelFormat pxf = System.Drawing.Imaging.PixelFormat.Format24bppRgb;
+            System.Drawing.Imaging.BitmapData bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, pxf);
+            IntPtr ptr = bmpData.Scan0;
+            int numBytes = bmp.Width * bmp.Height * 3;
+            byte[] rgbValues = new byte[numBytes];
+
+            int j = 0;
+            for (int i = 0; i < colors.Length; i++)
+            {
+                rgbValues[j++] = colors[i].B;
+                rgbValues[j++] = colors[i].G;
+                rgbValues[j++] = colors[i].R;
+            }
+
+            System.Runtime.InteropServices.Marshal.Copy(rgbValues, 0, ptr, numBytes);
+            bmp.UnlockBits(bmpData);
+            bmp.Save(filename);
+        }
+
     }
+
 }

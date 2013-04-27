@@ -96,5 +96,12 @@ namespace LD26_Zayka
         {
             return new Vector2(mstate.X, mstate.Y)-new Vector2(oldmstate.X, oldmstate.Y);
         }
+
+
+        public bool IsKeyReleased(Keys key)
+        {
+            return (kstate.IsKeyUp(key) && !oldkstate.IsKeyUp(key));
+        }
+
     }
 }

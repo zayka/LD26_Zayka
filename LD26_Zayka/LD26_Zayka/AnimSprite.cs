@@ -19,7 +19,7 @@ namespace LD26_Zayka
         int dimX;
         int dimY;
         public Vector2 Origin { get { return new Vector2(width / 2, height / 2); } }
-        int startY;
+        public int startY;
 
         public int Width
         {

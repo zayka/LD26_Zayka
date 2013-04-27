@@ -30,10 +30,13 @@ namespace LD26_Zayka
         public void Update(GameTime gt, Vector2 R)
         {            
             velocity += R * (float)gt.ElapsedGameTime.TotalSeconds;
+            velocity.Y = MathHelper.Clamp(velocity.Y, -1000 , +1000);
             Update(gt);
             if (landing) { velocity.Y = 0; landing = false; }
             //pos = Vector2.Clamp(pos, Vector2.Zero + Origin/2, new Vector2(Game1.screenWidth, Game1.screenHeight) - Origin/2);
             pos.X = MathHelper.Clamp(pos.X, 0 + Origin.X / 2, Game1.screenWidth - Origin.X / 2);
+            light.pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
+            hull.Pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
         }
 
         public void HitY()
@@ -58,12 +61,12 @@ namespace LD26_Zayka
 
         public void MoveRight()
         {
-            velocity.X = 350;            
+            velocity.X = maxSpeed;            
         }
 
         public void MoveLeft()
         {
-            velocity.X = -350;
+            velocity.X = -maxSpeed;
         }
         public void Stop()
         {
