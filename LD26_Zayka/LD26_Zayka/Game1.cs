@@ -192,6 +192,7 @@ namespace LD26_Zayka
             pEngine = new ParticleEngine(this);
             player = new Player(new Vector2(200, 550), new AnimSprite(Content.Load<Texture2D>("player_sprite"), 20, 20, 8, 0.5f), 300);
             eternalEvil = new EternalEvil(pEngine);
+            allPlatforms.Clear();
             StartingEvent();
             MediaPlayer.Stop();
             MediaPlayer.Play(levelTheme);
@@ -270,7 +271,7 @@ namespace LD26_Zayka
                if (BonusList[i].toRemove) BonusList.RemoveAt(i--);
             }  
 
-            if (player.Pos.Y-screenHeight/2-1000<lastline&&!player.Victory) GenerateLine();
+            if (player.Pos.Y-2000<lastline&&!player.Victory) GenerateLine();
             if (lastline < -34000&&!player.Victory) FinalEvent();
 
 
@@ -429,17 +430,19 @@ namespace LD26_Zayka
         Vector2 Collision(Vector2 Rdxdy, Vector2 Vdxdy)
         {
             Vector2 dxdy = Rdxdy + Vdxdy;
-            bool isHitX=false;
+            bool isHitX = false;
             bool isHitY = false;
             Vector2 prevPos = player.Pos;
             float dx = dxdy.X;
             float dy = dxdy.Y;
-            // +-5 - player bounds in texture
-            foreach (var platform in allPlatforms)
+            for (int i = allPlatforms.Count - 1; i > 0 && i > allPlatforms.Count - 200; i--)
+            //foreach (var platform in allPlatforms)
             {
+                Platform platform = allPlatforms[i];
                 if (!platform.isOnScreen) continue;
                 // h
                 player.Pos = player.Pos + new Vector2(dx, 0);
+                // +-5 - player bounds in texture
                 if (PixelCollision(platform, player))
                 {
                     isHitX = true;
@@ -449,13 +452,12 @@ namespace LD26_Zayka
                     else
                         dx = platform.Pos.X + platform.Origin.X - (prevPos.X - 5);
                 }
-
                 player.Pos = prevPos;
                 //v
                 player.Pos = player.Pos + new Vector2(0, dy);
-                if (PixelCollision(platform, player)) 
+                if (PixelCollision(platform, player))
                 {
-                    
+
                     isHitY = true;
                     player.HitY();
 
@@ -464,7 +466,7 @@ namespace LD26_Zayka
                     else
                     { dy = platform.Pos.Y + platform.Origin.Y - (prevPos.Y - 5); platform.Crash(); }
                 }
-                
+
                 player.Pos = prevPos;
             }
             player.Pos = prevPos;
@@ -527,7 +529,7 @@ namespace LD26_Zayka
 
         public void GenerateLine()
         {
-            if (rnd.NextDouble()*100 > 96)
+            if (rnd.NextDouble()*100 > 95)
             {
                 int eventN = rnd.Next(4);
                 if (eventN == 0) { Ladder1Event(); }
@@ -592,38 +594,15 @@ namespace LD26_Zayka
         private void StartingEvent()
         {
             Platform platform;
-            for (int i = 0; i < screenWidth; i += 60)
+            for (int j = 860; j > 620; j-=20)
             {
-                platform = new Platform(new Vector2(i, 600), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 620), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 640), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 660), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 680), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 700), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 720), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 740), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 760), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 780), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 800), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 820), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 840), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i, 860), PlatfotmType.Safe);
-                allPlatforms.Add(platform);
+                for (int i = 0; i < screenWidth; i += 60)
+                {
+                   
+                    platform = new Platform(new Vector2(i, j), PlatfotmType.Safe);
+                    allPlatforms.Add(platform);                    
+                }
             }
-
             platform = new Platform(new Vector2(screenWidth / 2, 500), PlatfotmType.Safe);
             allPlatforms.Add(platform);
             platform = new Platform(new Vector2(screenWidth / 2 + 60, 400), PlatfotmType.Safe);

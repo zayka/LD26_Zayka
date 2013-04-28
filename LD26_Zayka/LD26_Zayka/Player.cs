@@ -112,11 +112,11 @@ namespace LD26_Zayka
 
         public void MoveUp(float dy)
         {
-            pos.Y -= 8*maxSpeed*dy;
+            pos.Y -= 2*maxSpeed*dy;
         }
         public void MoveDown(float dy)
         {
-            pos.Y += maxSpeed*dy;
+            pos.Y += 2*maxSpeed*dy;
         }
     }
 }
