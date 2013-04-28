@@ -7,25 +7,51 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace LD26_Zayka
 {
-    enum PlatfotmType
+    public enum PlatfotmType
     {
-        Horisontal,
-        Vertical
+        Safe,
+        Unstable,
+        Evil,
+        RandomAll,
+        RandomSU
     }
     class Platform:GameObject
     {
 
         float hp = 100;
-        bool isUnstable;
+        bool isUnstable=false;
+        bool isEvil = false;
         bool isCrashing = false;
         float crashTime = 3.0f;
         public bool toRemove = false;
 
-        public Platform(Vector2 pos, AnimSprite sprite, bool unstable=false)
-            : base(pos, sprite)
+        public Platform(Vector2 pos, PlatfotmType pType)
+            : base(pos, null)
         {
-
-            isUnstable = unstable;
+            //AnimSprite sprite;
+            if (pType == PlatfotmType.RandomAll) pType = (PlatfotmType)Game1.rnd.Next(3);
+            if (pType == PlatfotmType.RandomSU) pType = (PlatfotmType)Game1.rnd.Next(2);
+            switch (pType)
+            {
+                case PlatfotmType.Safe:
+                    sprite = new AnimSprite(Cnt.game.Content.Load<Texture2D>("platform0"), 60, 20, 1, 100);
+                    break;
+                case PlatfotmType.Unstable:
+                    sprite = new AnimSprite(Cnt.game.Content.Load<Texture2D>("platform_blue"), 60, 20, 1, 100);
+                    isUnstable = true;
+                    break;
+                case PlatfotmType.Evil:
+                    sprite = new AnimSprite(Cnt.game.Content.Load<Texture2D>("platform_red"), 60, 20, 1, 100);
+                    isEvil = true;
+                    break;               
+                default:
+                    break;
+            }
+                List<Vector2> list = new List<Vector2>() { new Vector2(-Width / 2, -Height / 2), new Vector2(Width / 2, -Height / 2), new Vector2(Width / 2, Height / 2), new Vector2(-Width / 2, Height / 2) };
+                hull = new ZLight.ConvexHull(list, Vector2.Zero);
+                hull.Pos = pos;
+                light.pos = pos;
+                light.radius = 1200;            
         }
 
         public override void Draw(SpriteBatch sb)

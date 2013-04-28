@@ -35,8 +35,8 @@ namespace LD26_Zayka
             if (landing) { velocity.Y = 0; landing = false; }
             //pos = Vector2.Clamp(pos, Vector2.Zero + Origin/2, new Vector2(Game1.screenWidth, Game1.screenHeight) - Origin/2);
             pos.X = MathHelper.Clamp(pos.X, 0 + Origin.X / 2, Game1.screenWidth - Origin.X / 2);
-            light.pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
-            hull.Pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
+           // light.pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
+           // hull.Pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
         }
 
         public void HitY()
@@ -75,6 +75,15 @@ namespace LD26_Zayka
         public void Land()
         {
             isJumping = false;          
+        }
+
+        public void MoveUp(float dy)
+        {
+            pos.Y -= maxSpeed*dy;
+        }
+        public void MoveDown(float dy)
+        {
+            pos.Y += maxSpeed*dy;
         }
     }
 }

@@ -61,6 +61,7 @@ namespace LD26_Zayka
             }
             //this.pos = pos;
             originPosY = pos.Y;
+            angle = (float)Game1.rnd.NextDouble() * MathHelper.TwoPi;
         }
         
         public override void Draw(SpriteBatch sb)

@@ -57,11 +57,13 @@ namespace LD26_Zayka
         {
             //Vector2 origin = new Vector2(width / 2, height / 2);
            
-            int x = curframe % dimX * height;
-            int y = curframe / dimX * width+startY;
+            int x = curframe % dimX * width;
+            int y = curframe / dimX * height+startY;
             SpriteEffects sp = right ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
-            
-            sb.Draw(main, pos , new Rectangle(x, y, width, height), c, angle, Origin, 1, sp, 0);
+
+           // Vector2 newpos = new Vector2((int)Math.Round(pos.X),(int)Math.Round(pos.Y));
+
+            sb.Draw(main, pos, new Rectangle(x, y, width, height), c, angle, Origin, 1, sp, 0);
             
         }
 
@@ -70,8 +72,8 @@ namespace LD26_Zayka
        
         public Color[] GetCurrentData()
         {
-            int x = curframe % dimX * height;
-            int y = curframe / dimX * width;
+            int x = curframe % dimX * width;
+            int y = curframe / dimX * height;
             Color[] data = new Color[width * height];
             main.GetData<Color>(0, new Rectangle(x, y, width, height), data, 0, width * height);
             return data;

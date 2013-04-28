@@ -28,8 +28,8 @@ namespace LD26_Zayka
         public Camera Camera { get { return camera; } }
         GraphicsDevice device;
         public static Random rnd = new Random(111222);
-        int lastline=400;
-        float G = 2000;
+        int lastline=600;
+        float G = 0;
         ZLights zl;
         Texture2D bg;
 
@@ -37,7 +37,9 @@ namespace LD26_Zayka
         //Platform platform;
         List<Platform> allPlatforms = new List<Platform>();
         List<Bonus> BonusList = new List<Bonus>();
-        bool lightsON = false;
+        bool lightsON = true;
+        float ambient = 0.2f;
+        float maxHeight = 10000;
 
         public Game1()
         {
@@ -81,29 +83,24 @@ namespace LD26_Zayka
             Components.Add(new FPSCounter.FPSCounter(this, font, spriteBatch));     
 #endif
             bg = Content.Load<Texture2D>("mainBG");
-            LoadStartPlatform();
+            //StartingEvent();
+
+            Ladder1Event();
+
+            /*
             while (lastline > 0)
             {
                 GenerateLine();
-            }
+            }*/
             player = new Player(new Vector2(200, 550), new AnimSprite(Content.Load<Texture2D>("player_sprite"), 20, 20, 8, 0.5f),300);
             //Platform platform = new Platform(new Vector2(200, 600), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));            
             //allPlatforms.Add(platform);
            // platform = new Platform(new Vector2(200, 100), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));
             //allPlatforms.Add(platform);
+            //Platform platform = new Platform(new Vector2(200, 650), new AnimSprite(Content.Load<Texture2D>("gif"), 60, 20, 60, 0.03f));
+            //allPlatforms.Add(platform);
         }
-
-        private void LoadStartPlatform()
-        {
-            Platform platform;
-            for (int i = 0; i < screenWidth; i+=60)
-            {
-                platform = new Platform(new Vector2(i, 600), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));
-                allPlatforms.Add(platform);
-                platform = new Platform(new Vector2(i+200, 600-100), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));
-                allPlatforms.Add(platform);
-            }                       
-        }
+        
    
         protected override void UnloadContent() { }
 
@@ -123,6 +120,14 @@ namespace LD26_Zayka
             Vector2 R = Vector2.Zero;
             R.Y += G;
 
+
+            if (input.IsKeyPressed(Keys.D1)) G = 2000;
+            if (input.IsKeyPressed(Keys.D2)) G = 0;
+
+            if (input.IsKeyPressed(Keys.W)) player.MoveUp(elapsed);
+            if (input.IsKeyPressed(Keys.S)) player.MoveDown(elapsed);
+
+
             if (input.IsKeyPressed(Keys.D)) player.MoveRight();
             else
                 if (input.IsKeyPressed(Keys.A)) player.MoveLeft();
@@ -131,29 +136,19 @@ namespace LD26_Zayka
             if (input.IsLeftButtonClick()) player.Jump();
 
             if (input.IsNewKeyPressed(Keys.Q)) { lightsON ^= true; };
-            if (input.IsNewKeyPressed(Keys.D1)) 
-            {
-                Bonus b = new Bonus(new Vector2(100, 200), new AnimSprite(Content.Load<Texture2D>("bonuses"), 40, 40, 1, 100,0), BonusType.Jump);
-                BonusList.Add(b);
-            }
-
-            if (input.IsNewKeyPressed(Keys.D2))
-            {
-                Bonus b = new Bonus(new Vector2(200, 200), new AnimSprite(Content.Load<Texture2D>("bonuses"), 40, 40, 1, 100, 20), BonusType.Speed);
-                BonusList.Add(b);
-            }           
+                
 
             R=Collision(R*elapsed*elapsed,player.Velocity*elapsed)/elapsed/elapsed;
             
            // player.Pos -= new Vector2(0, -G*elapsed);
             player.Update(gameTime,R);
-
+          
             for (int i = 0; i < allPlatforms.Count; i++)
             {
                 if (allPlatforms[i].isOnScreen) allPlatforms[i].Update(gameTime);
                 if (allPlatforms[i].toRemove) allPlatforms.RemoveAt(i--);
             }
-
+            
             for (int i = 0; i < BonusList.Count; i++)
             {
                BonusList[i].Update(gameTime);
@@ -172,6 +167,8 @@ namespace LD26_Zayka
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            ambient = MathHelper.Lerp(0.2f, 0.9f, Math.Abs(player.Pos.Y) / maxHeight);
+            ambient = MathHelper.Clamp(ambient, 0.2f, 0.9f);
             if (lightsON)
             {
                 GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -179,11 +176,11 @@ namespace LD26_Zayka
                 List<Light> LList = new List<Light>();
                 foreach (var plt in allPlatforms)
                 {
-                    chList.Add(plt.hull);
+                    if (plt.isOnScreen) chList.Add(plt.hull);
                 }
                 chList.Add(player.hull);
                 LList.Add(player.light);
-                Texture2D shadows = zl.RenderShadows(chList, LList, 0.7f);
+                Texture2D shadows = zl.RenderShadows(chList, LList, ambient);
 
 
                 GraphicsDevice.SetRenderTarget(null);
@@ -242,7 +239,8 @@ namespace LD26_Zayka
             spriteBatch.Begin();
             spriteBatch.DrawString(font, "velocity" + player.Velocity, new Vector2(10, 0 * 12), Color.LightGreen);
             spriteBatch.DrawString(font, "pos" + player.Pos, new Vector2(10, 1 * 12), Color.LightGreen);
-            spriteBatch.DrawString(font, "lastline" + lastline, new Vector2(10, 2 * 12), Color.LightGreen);           
+            spriteBatch.DrawString(font, "lastline" + lastline, new Vector2(10, 2 * 12), Color.LightGreen);
+            spriteBatch.DrawString(font, "ambient= " + ambient, new Vector2(10, 3 * 12), Color.LightGreen);           
             spriteBatch.End();
 #endif
             base.Draw(gameTime);
@@ -334,7 +332,7 @@ namespace LD26_Zayka
                     Color color2 = secondData[(x - secondRect.Left) + (y - secondRect.Top) * secondRect.Width];
                     int sum1 = color1.R + color1.G + color1.B + color1.A;
                     int sum2 = color2.R + color2.G + color2.B + color2.A;
-                    if (sum1 > 300 && sum2 > 300) return true;
+                    if (sum1 > 100 && sum2 > 100) return true;
                 }
             }
             return false;
@@ -345,20 +343,17 @@ namespace LD26_Zayka
         public void GenerateLine()
         {
             Platform platform;
-            float x = MathHelper.Lerp(0, 50, Math.Abs(lastline+1)/20000.0f);
+            float x = MathHelper.Lerp(0, 35, Math.Abs(lastline)/maxHeight);
+            x = MathHelper.Clamp(x, 0, 35);
             for (int i = 30; i < screenWidth; i+=60)
             {
-                if (rnd.Next(100) > 50+x)
+                if (rnd.Next(100) > 50 + x)
                 {
-                    
-                    if (rnd.Next(100) > 50) 
-                    platform = new Platform(new Vector2(i, lastline), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100),false);
-                    else
-                        platform = new Platform(new Vector2(i, lastline), new AnimSprite(Content.Load<Texture2D>("platform2"), 60, 20, 1, 100), true);
+                    platform = new Platform(new Vector2(i, lastline), PlatfotmType.RandomSU);
                     allPlatforms.Add(platform);
                     if (rnd.Next(100) > 57)
                     {
-                        Bonus b = new Bonus(new Vector2(rnd.Next(screenWidth), lastline-30), new AnimSprite(Content.Load<Texture2D>("bonuses"), 40, 40, 1, 100, 20));
+                        Bonus b = new Bonus(new Vector2(rnd.Next(screenWidth), lastline - 30), new AnimSprite(Content.Load<Texture2D>("bonuses"), 40, 40, 1, 100, 20));
                         BonusList.Add(b);
                     }
                 }
@@ -394,6 +389,234 @@ namespace LD26_Zayka
             bmp.Save(filename);
         }
 
-    }
+        private void StartingEvent()
+        {
+            Platform platform;
+            for (int i = 0; i < screenWidth; i += 60)
+            {
+                platform = new Platform(new Vector2(i, 600), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 620), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 640), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 660), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 680), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 700), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 720), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 740), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 760), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 780), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+            }
 
+            platform = new Platform(new Vector2(screenWidth / 2, 500), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 60, 400), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 120, 300), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 180, 200), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 240, 100), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 180, 0), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+
+            platform = new Platform(new Vector2(screenWidth / 2 + 120, -100), PlatfotmType.Unstable);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 60, -100), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 60, -200), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 60, -300), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 60, -400), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 60, -500), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+
+            
+             for (int i = 0; i < 60*10; i += 60)
+             {
+                 platform = new Platform(new Vector2(screenWidth / 2 - i, -500), PlatfotmType.Safe);
+                 allPlatforms.Add(platform);
+             }
+            lastline = -600;
+        }
+
+
+
+        void Ladder1Event()
+        {
+            
+         Platform platform;
+
+         platform = new Platform(new Vector2(screenWidth / 2 - 120, lastline), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 180, lastline), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 240, lastline), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 120, lastline), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 180, lastline), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 240, lastline), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+
+            platform = new Platform(new Vector2(screenWidth / 2 - 120, lastline-100), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 180, lastline - 200), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 240, lastline - 300), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 300, lastline - 400), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 360, lastline - 500), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 440, lastline - 600), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+
+            platform = new Platform(new Vector2(screenWidth / 2 - 440, lastline - 700), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 360, lastline - 800), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 300, lastline - 900), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 240, lastline - 1000), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 180, lastline - 1100), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 - 120, lastline - 1200), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+
+
+
+            platform = new Platform(new Vector2(screenWidth / 2 + 120, lastline - 100), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 180, lastline - 200), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 240, lastline - 300), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 300, lastline - 400), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 360, lastline - 500), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 440, lastline - 600), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+
+            platform = new Platform(new Vector2(screenWidth / 2 + 440, lastline - 700), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 360, lastline - 800), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 300, lastline - 900), PlatfotmType.Safe);
+            allPlatforms.Add(platform);            
+            platform = new Platform(new Vector2(screenWidth / 2 + 240, lastline - 1000), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 180, lastline - 1100), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            platform = new Platform(new Vector2(screenWidth / 2 + 120, lastline - 1200), PlatfotmType.Safe);
+            allPlatforms.Add(platform);
+            
+            lastline -= 1300;
+        }
+
+
+        void Ladder2Event()
+        {
+            Platform platform;
+            /*
+            for (int i = 0; i < screenWidth; i += 60)
+            {
+                platform = new Platform(new Vector2(i, lastline+100), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));
+                allPlatforms.Add(platform);               
+            }//*/
+
+            for (int i = 0; i < 301; i += 100)
+            {
+
+                platform = new Platform(new Vector2(screenWidth / 2 + 60 * 5, lastline - i), PlatfotmType.RandomSU);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(screenWidth / 2 - 60 * 5, lastline - i), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+            }
+            for (int i = 400; i < 701; i += 100)
+            {
+                platform = new Platform(new Vector2(screenWidth / 2 + 60 * 4, lastline - i), PlatfotmType.RandomSU);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(screenWidth / 2 - 60 * 4, lastline - i), PlatfotmType.RandomSU);
+                allPlatforms.Add(platform);
+            }                      
+
+            lastline -= 700;
+        }
+
+
+        void Nors1Event()
+        {
+
+            Platform platform;           
+            for (int j = 0; j < 501; j += 200)
+            {
+
+                platform = new Platform(new Vector2(30, lastline - j), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+
+                for (int i = 2 * 60 + 30; i < screenWidth; i += 60)
+                {
+                    platform = new Platform(new Vector2(i, lastline - j), PlatfotmType.Safe);
+                    allPlatforms.Add(platform);
+                }
+
+                platform = new Platform(new Vector2(screenWidth - 30, lastline - j - 100), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+
+                for (int i = 30; i < screenWidth - 30-2*60; i += 60)
+                {
+                    platform = new Platform(new Vector2(i, lastline - j - 100), PlatfotmType.Safe);
+                    allPlatforms.Add(platform);
+                }
+            }
+          
+            lastline -= 500;
+        }
+
+        void Nors2Event()
+        {
+
+            Platform platform;
+            for (int j = 0; j < 501; j += 200)
+            {
+
+                platform = new Platform(new Vector2(30, lastline - j), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+
+                for (int i = 2 * 60 + 30; i < screenWidth; i += 60)
+                {                   
+                    platform = new Platform(new Vector2(i, lastline - j), PlatfotmType.RandomSU);                   
+                    allPlatforms.Add(platform);                
+                }
+
+                platform = new Platform(new Vector2(screenWidth - 30, lastline - j - 100), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+
+                for (int i = 30; i < screenWidth - 30 - 2 * 60; i += 60)
+                {
+                    platform = new Platform(new Vector2(i, lastline - j - 100), PlatfotmType.RandomSU);
+                    allPlatforms.Add(platform);
+                }
+            }
+
+            lastline -= 600;
+        }
+
+
+    }
 }

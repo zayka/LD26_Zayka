@@ -118,13 +118,13 @@ namespace ZLight
                     {
                         int n = index == hull.vertices.Count - 1 ? 0 : index + 1;
                         length = hull.vertices[index] + hull.Pos - l.pos;
-                        shadow.Add(hull.vertices[index] + hull.Pos + 40 * length);
+                        shadow.Add(hull.vertices[index] + hull.Pos + 70 * length);
                         shadow.Add(hull.vertices[n] + hull.Pos);
 
                         index = (index + 1) % hull.vertices.Count;
                     }
                     length = hull.vertices[shadowEnd] + hull.Pos - l.pos;
-                    shadow.Add(hull.vertices[shadowEnd] + hull.Pos + 40 * length);
+                    shadow.Add(hull.vertices[shadowEnd] + hull.Pos + 70 * length);
 
                     effectStrip.CurrentTechnique = effectStrip.Techniques["Pretransformed"];
                     device.Textures[1] = nextRT;
