@@ -72,5 +72,10 @@ namespace LD26_Zayka
             if (isUnstable)
                 isCrashing = true;
         }
+
+        internal void Damage(Player player)
+        {
+            if (this.isEvil) player.hitpoints -= 20 * 0.016f;
+        }
     }
 }

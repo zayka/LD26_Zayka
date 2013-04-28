@@ -16,7 +16,8 @@ namespace LD26_Zayka
         bool isJumping=false;
         bool landing = false;
         public float hitpoints;
-        public float maxHitpoints;
+        public float maxHitpoints=100;
+        ParticleEmitter pEmitter;
 
         public Vector2 Velocity { get { return velocity; } }
 
@@ -24,6 +25,21 @@ namespace LD26_Zayka
         {
             input = InputState.GetInput();
             maxSpeed = speed;
+            hitpoints=maxHitpoints;
+
+            pEmitter = new ParticleEmitter(Cnt.game.pEngine, Vector2.Zero);
+            //pps, pSpeed, 
+            //posVar, alphaVel, 
+            //minSize,maxSize, sizeVel,
+            //ttl
+            pEmitter.SetParam(600, 70,
+                              10, 400,
+                              0.4f, 0.5f, 0.15f,
+                              50);
+            pEmitter.Color = Color.DarkViolet;
+          
+
+
         }
 
 
@@ -35,9 +51,15 @@ namespace LD26_Zayka
             if (landing) { velocity.Y = 0; landing = false; }
             //pos = Vector2.Clamp(pos, Vector2.Zero + Origin/2, new Vector2(Game1.screenWidth, Game1.screenHeight) - Origin/2);
             pos.X = MathHelper.Clamp(pos.X, 0 + Origin.X / 2, Game1.screenWidth - Origin.X / 2);
-           // light.pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
-           // hull.Pos = new Vector2(pos.X, pos.Y + Cnt.game.camera.View.Translation.Y);
+            pEmitter.Update(gt);
+            pEmitter.Pos = pos;
+            if (pos.Y > Cnt.game.eternalEvil.Pos - 550) { hitpoints -= 50*(float)gt.ElapsedGameTime.TotalSeconds; }
+            if (pos.Y > Cnt.game.eternalEvil.Pos-200) { hitpoints = 0; }
+            if (hitpoints < 0) Die();
         }
+
+        public void Die()
+        { }
 
         public void HitY()
         {

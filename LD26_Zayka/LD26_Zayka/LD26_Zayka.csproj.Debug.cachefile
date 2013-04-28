@@ -1,6 +1,4 @@
 Content\Font1.xnb
-Content\platformblock.xnb
-Content\player.xnb
 Content\player_sprite.xnb
 Content\platform1.xnb
 Content\platform2.xnb
@@ -13,3 +11,8 @@ Content\gif.xnb
 Content\platform0.xnb
 Content\platform_blue.xnb
 Content\platform_red.xnb
+Content\startText.xnb
+Content\p4.xnb
+Content\hud.xnb
+Content\hudBack.xnb
+Content\arrow.xnb

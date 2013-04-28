@@ -38,7 +38,7 @@ namespace LD26_Zayka
             {
                 case BonusType.Jump:
                     getBonus = getJump;
-                    amount = 15;
+                    amount = 12;
                     getText = "+Jump";
                     sprite.startY = 0;
                     break;
@@ -50,7 +50,7 @@ namespace LD26_Zayka
                     break;
                 case BonusType.Hp:
                     getBonus = getHP;
-                    amount = 25;
+                    amount = 20;
                     getText = "+HP";
                     sprite.startY = 80;
                     break;

@@ -18,8 +18,8 @@ namespace LD26_Zayka
     /// </summary>
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
+        public GraphicsDeviceManager graphics;
+        public static SpriteBatch spriteBatch;
         InputState input;
         public SpriteFont font;
         public static int screenWidth = 1024;
@@ -29,9 +29,11 @@ namespace LD26_Zayka
         GraphicsDevice device;
         public static Random rnd = new Random(111222);
         int lastline=600;
+        public EternalEvil eternalEvil;
         float G = 0;
         ZLights zl;
         Texture2D bg;
+        HUD hud;
 
         public Player player;
         //Platform platform;
@@ -39,7 +41,11 @@ namespace LD26_Zayka
         List<Bonus> BonusList = new List<Bonus>();
         bool lightsON = true;
         float ambient = 0.2f;
-        float maxHeight = 10000;
+        public float maxHeight = 35000;
+
+        Texture2D startText;
+        public ParticleEngine pEngine;
+        ParticleEmitter testEmitter;
 
         public Game1()
         {
@@ -83,22 +89,31 @@ namespace LD26_Zayka
             Components.Add(new FPSCounter.FPSCounter(this, font, spriteBatch));     
 #endif
             bg = Content.Load<Texture2D>("mainBG");
-            //StartingEvent();
+            startText = Content.Load<Texture2D>("startText");
+            hud = new HUD();
+            pEngine = new ParticleEngine(this);
+            testEmitter = new ParticleEmitter(pEngine, Vector2.Zero);
+            //pps, pSpeed, 
+            //posVar, alphaVel, 
+            //minSize,maxSize, sizeVel,
+            //ttl
+            testEmitter.SetParam(600, 40,
+                              0, 400,
+                              0.2f, 0.4f, 0.05f,
+                              50);
 
-            Ladder1Event();
+
+            eternalEvil = new EternalEvil(pEngine);
+            StartingEvent();
+
+            //Ladder1Event();
 
             /*
             while (lastline > 0)
             {
                 GenerateLine();
             }*/
-            player = new Player(new Vector2(200, 550), new AnimSprite(Content.Load<Texture2D>("player_sprite"), 20, 20, 8, 0.5f),300);
-            //Platform platform = new Platform(new Vector2(200, 600), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));            
-            //allPlatforms.Add(platform);
-           // platform = new Platform(new Vector2(200, 100), new AnimSprite(Content.Load<Texture2D>("platform1"), 60, 20, 1, 100));
-            //allPlatforms.Add(platform);
-            //Platform platform = new Platform(new Vector2(200, 650), new AnimSprite(Content.Load<Texture2D>("gif"), 60, 20, 60, 0.03f));
-            //allPlatforms.Add(platform);
+            player = new Player(new Vector2(200, 550), new AnimSprite(Content.Load<Texture2D>("player_sprite"), 20, 20, 8, 0.5f),300);           
         }
         
    
@@ -111,10 +126,18 @@ namespace LD26_Zayka
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            
+
             input.Update();
             camera.Position = new Vector2(screenWidth / 2, player.Pos.Y - 100);
             float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (elapsed == 0) return;
+
+            eternalEvil.Update(gameTime);
+            testEmitter.Pos = player.Pos;
+            //testEmitter.Update(gameTime);
+            pEngine.Update(gameTime);
+
             if (input.IsKeyPressed(Keys.Escape)) this.Exit();
 
             Vector2 R = Vector2.Zero;
@@ -140,7 +163,6 @@ namespace LD26_Zayka
 
             R=Collision(R*elapsed*elapsed,player.Velocity*elapsed)/elapsed/elapsed;
             
-           // player.Pos -= new Vector2(0, -G*elapsed);
             player.Update(gameTime,R);
           
             for (int i = 0; i < allPlatforms.Count; i++)
@@ -186,12 +208,21 @@ namespace LD26_Zayka
                 GraphicsDevice.SetRenderTarget(null);
 
                 GraphicsDevice.Clear(new Color(0, 255, 0, 255));
+               
 
 
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, camera.View);
                 //spriteBatch.Begin();
                 spriteBatch.Draw(bg, new Vector2(0,-camera.View.Translation.Y), Color.White);
                 spriteBatch.Draw(shadows, new Vector2(0, -camera.View.Translation.Y), Color.White);
+                spriteBatch.End();
+
+
+                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive, null, null, null, null, camera.View);
+                pEngine.Draw();
+                spriteBatch.End();
+
+                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, camera.View);
                 player.Draw(spriteBatch);
                 foreach (var platform in allPlatforms)
                 {
@@ -203,6 +234,7 @@ namespace LD26_Zayka
                     BonusList[i].Draw(spriteBatch);
                 }
                 spriteBatch.End();
+               
             }
             else
             {
@@ -229,7 +261,14 @@ namespace LD26_Zayka
             {
                 BonusList[i].DrawText(spriteBatch);
             }
-            
+
+
+            spriteBatch.Draw(startText, new Vector2(0,-500), Color.White);
+            spriteBatch.End();
+
+            spriteBatch.Begin();
+
+            hud.Draw(spriteBatch);
             spriteBatch.End();
 
 
@@ -240,7 +279,9 @@ namespace LD26_Zayka
             spriteBatch.DrawString(font, "velocity" + player.Velocity, new Vector2(10, 0 * 12), Color.LightGreen);
             spriteBatch.DrawString(font, "pos" + player.Pos, new Vector2(10, 1 * 12), Color.LightGreen);
             spriteBatch.DrawString(font, "lastline" + lastline, new Vector2(10, 2 * 12), Color.LightGreen);
-            spriteBatch.DrawString(font, "ambient= " + ambient, new Vector2(10, 3 * 12), Color.LightGreen);           
+            spriteBatch.DrawString(font, "enernalEvil= " + eternalEvil.Pos, new Vector2(10, 3 * 12), Color.LightGreen);     
+            spriteBatch.DrawString(font, "hp= " + player.hitpoints, new Vector2(10, 4 * 12), Color.LightGreen);
+            spriteBatch.DrawString(font, "p= " + pEngine.Count, new Vector2(10, 5 * 12), Color.LightGreen); 
             spriteBatch.End();
 #endif
             base.Draw(gameTime);
@@ -281,7 +322,7 @@ namespace LD26_Zayka
                     player.HitY();
 
                     if (Math.Sign(dy) > 0)
-                    { dy = platform.Pos.Y - platform.Origin.Y - (prevPos.Y + 5); player.Land(); platform.Crash(); }
+                    { dy = platform.Pos.Y - platform.Origin.Y - (prevPos.Y + 5); player.Land(); platform.Crash(); platform.Damage(player); }
                     else
                     { dy = platform.Pos.Y + platform.Origin.Y - (prevPos.Y - 5); platform.Crash(); }
                 }
@@ -342,26 +383,41 @@ namespace LD26_Zayka
 
         public void GenerateLine()
         {
+            if (rnd.NextDouble()*100 > 95)
+            {
+                int eventN = rnd.Next(4);
+                if (eventN == 0) { Ladder1Event(); }
+                if (eventN == 1) { Ladder2Event(); }
+                if (eventN == 2) { Nors1Event(); }
+                if (eventN == 3) { Nors2Event(); }
+                GenerateRandomLine();
+                GenerateRandomLine();
+            }
+            else
+                GenerateRandomLine();
+
+        }
+
+        public void GenerateRandomLine()
+        {
             Platform platform;
-            float x = MathHelper.Lerp(0, 35, Math.Abs(lastline)/maxHeight);
+            float x = MathHelper.Lerp(0, 30, Math.Abs(lastline) / maxHeight);
             x = MathHelper.Clamp(x, 0, 35);
-            for (int i = 30; i < screenWidth; i+=60)
+            for (int i = 30; i < screenWidth; i += 60)
             {
                 if (rnd.Next(100) > 50 + x)
                 {
-                    platform = new Platform(new Vector2(i, lastline), PlatfotmType.RandomSU);
+                    platform = new Platform(new Vector2(i, lastline), PlatfotmType.RandomAll);
                     allPlatforms.Add(platform);
-                    if (rnd.Next(100) > 57)
+                    if (rnd.Next(100) > 70)
                     {
                         Bonus b = new Bonus(new Vector2(rnd.Next(screenWidth), lastline - 30), new AnimSprite(Content.Load<Texture2D>("bonuses"), 40, 40, 1, 100, 20));
                         BonusList.Add(b);
                     }
                 }
-
             }
-            lastline-=100;
+            lastline -= 100;
         }
-
         void TextureToFile(Texture2D tex, string filename)
         {
             Stream stream = new MemoryStream();
@@ -389,12 +445,19 @@ namespace LD26_Zayka
             bmp.Save(filename);
         }
 
+        void DrawEternalEvil()
+        {
+
+        }
+
+
+
         private void StartingEvent()
         {
             Platform platform;
             for (int i = 0; i < screenWidth; i += 60)
             {
-                platform = new Platform(new Vector2(i, 600), PlatfotmType.Safe);
+                platform = new Platform(new Vector2(i, 600), PlatfotmType.RandomAll);
                 allPlatforms.Add(platform);
                 platform = new Platform(new Vector2(i, 620), PlatfotmType.Safe);
                 allPlatforms.Add(platform);
@@ -420,7 +483,7 @@ namespace LD26_Zayka
             allPlatforms.Add(platform);
             platform = new Platform(new Vector2(screenWidth / 2 + 60, 400), PlatfotmType.Safe);
             allPlatforms.Add(platform);
-            platform = new Platform(new Vector2(screenWidth / 2 + 120, 300), PlatfotmType.Safe);
+            platform = new Platform(new Vector2(screenWidth / 2 + 120, 300), PlatfotmType.Evil );
             allPlatforms.Add(platform);
             platform = new Platform(new Vector2(screenWidth / 2 + 180, 200), PlatfotmType.Safe);
             allPlatforms.Add(platform);
@@ -450,8 +513,6 @@ namespace LD26_Zayka
              }
             lastline = -600;
         }
-
-
 
         void Ladder1Event()
         {
@@ -555,14 +616,20 @@ namespace LD26_Zayka
                 allPlatforms.Add(platform);
             }                      
 
-            lastline -= 700;
+            lastline -= 800;
         }
 
 
         void Nors1Event()
         {
 
-            Platform platform;           
+            Platform platform;
+            for (int i= 0; i < screenWidth; i += 120)
+            {
+                platform = new Platform(new Vector2(i, lastline), PlatfotmType.RandomAll);
+                allPlatforms.Add(platform);
+            }
+            lastline -= 100;
             for (int j = 0; j < 501; j += 200)
             {
 
@@ -585,13 +652,20 @@ namespace LD26_Zayka
                 }
             }
           
-            lastline -= 500;
+            lastline -= 600;
         }
 
         void Nors2Event()
         {
 
             Platform platform;
+            for (int i = 0; i < screenWidth; i += 120)
+            {
+                platform = new Platform(new Vector2(i, lastline), PlatfotmType.RandomAll);
+                allPlatforms.Add(platform);
+            }
+            lastline -= 100;
+
             for (int j = 0; j < 501; j += 200)
             {
 

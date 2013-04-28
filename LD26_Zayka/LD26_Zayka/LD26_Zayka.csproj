@@ -77,9 +77,15 @@
     <Compile Include="Bonus.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="Cnt.cs" />
+    <Compile Include="EternalEvil.cs" />
     <Compile Include="FPSCounter.cs" />
     <Compile Include="GameObject.cs" />
+    <Compile Include="HUD.cs" />
     <Compile Include="InputState.cs" />
+    <Compile Include="Particles\EvilEmitter.cs" />
+    <Compile Include="Particles\Particle.cs" />
+    <Compile Include="Particles\ParticleEmitter.cs" />
+    <Compile Include="Particles\ParticleEngine.cs" />
     <Compile Include="Platform.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
