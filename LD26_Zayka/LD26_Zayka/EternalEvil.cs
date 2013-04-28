@@ -10,7 +10,7 @@ namespace LD26_Zayka
     public class EternalEvil
     {
         public float Pos;
-        float speed = 100;
+        float maxSpeed = 120;
 
         List<EvilEmitter> pEmitters=new List<EvilEmitter>();
 
@@ -38,9 +38,9 @@ namespace LD26_Zayka
 
         public void Update(GameTime gt)
         {
-            speed = MathHelper.Lerp(70, 150, -Pos / Cnt.game.maxHeight);
+            float speed = MathHelper.Lerp(72, maxSpeed, -Pos / Cnt.game.maxHeight);
             float elapsed =(float)gt.ElapsedGameTime.TotalSeconds;
-            Pos -= speed * elapsed;
+            if (!Cnt.game.player.Victory&&!Cnt.game.player.isDead)  Pos -= speed * elapsed;
             int i = 0;
             foreach (var em in pEmitters)
             {

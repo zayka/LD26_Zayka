@@ -47,6 +47,7 @@ namespace LD26_Zayka
                 default:
                     break;
             }
+            
                 List<Vector2> list = new List<Vector2>() { new Vector2(-Width / 2, -Height / 2), new Vector2(Width / 2, -Height / 2), new Vector2(Width / 2, Height / 2), new Vector2(-Width / 2, Height / 2) };
                 hull = new ZLight.ConvexHull(list, Vector2.Zero);
                 hull.Pos = pos;

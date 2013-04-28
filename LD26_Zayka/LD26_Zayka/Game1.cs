@@ -13,6 +13,14 @@ using System.IO;
 
 namespace LD26_Zayka
 {
+    public enum GameStates
+    {
+        GS_Menu,
+        GS_Level, 
+        GS_GameOver
+    }
+
+
     /// <summary>
     /// This is the main type for your game
     /// </summary>
@@ -27,10 +35,10 @@ namespace LD26_Zayka
         public Camera camera;
         public Camera Camera { get { return camera; } }
         GraphicsDevice device;
-        public static Random rnd = new Random(111222);
+        public static Random rnd = new Random(DateTime.Now.Millisecond);
         int lastline=600;
         public EternalEvil eternalEvil;
-        float G = 0;
+        float G = 2000;
         ZLights zl;
         Texture2D bg;
         HUD hud;
@@ -44,8 +52,22 @@ namespace LD26_Zayka
         public float maxHeight = 35000;
 
         Texture2D startText;
+        Texture2D winScreen;
+        Texture2D menuScreen;
+        Texture2D deadScreen;
+
         public ParticleEngine pEngine;
         ParticleEmitter testEmitter;
+
+        GameStates gameState=GameStates.GS_Menu;
+
+        //Sounds
+        Song titleTheme;
+        Song levelTheme;
+        public Song bossTheme;
+        AudioEngine audioEngine;
+        WaveBank waveBank;
+        public SoundBank soundBank;
 
         public Game1()
         {
@@ -69,6 +91,11 @@ namespace LD26_Zayka
         /// </summary>
         protected override void Initialize()
         {
+            audioEngine = new AudioEngine("Content\\Audio\\audio.xgs");
+            waveBank = new WaveBank(audioEngine, "Content\\Audio\\Wave Bank.xwb");
+            soundBank = new SoundBank(audioEngine, "Content\\Audio\\Sound Bank.xsb");
+            //Cue cyd = soundBank.GetCue("railgun");
+            //cyd.Play();
             base.Initialize();
         }
 
@@ -88,10 +115,19 @@ namespace LD26_Zayka
 #if DEBUG
             Components.Add(new FPSCounter.FPSCounter(this, font, spriteBatch));     
 #endif
+            
+
             bg = Content.Load<Texture2D>("mainBG");
             startText = Content.Load<Texture2D>("startText");
+            winScreen = Content.Load<Texture2D>("winscreen");            
+            menuScreen = Content.Load<Texture2D>("menu");
+            deadScreen = Content.Load<Texture2D>("deadscreen");
+
+           // levelInit();
+
             hud = new HUD();
             pEngine = new ParticleEngine(this);
+            player = new Player(new Vector2(200, 550), new AnimSprite(Content.Load<Texture2D>("player_sprite"), 20, 20, 8, 0.5f), 300);  
             testEmitter = new ParticleEmitter(pEngine, Vector2.Zero);
             //pps, pSpeed, 
             //posVar, alphaVel, 
@@ -106,29 +142,82 @@ namespace LD26_Zayka
             eternalEvil = new EternalEvil(pEngine);
             StartingEvent();
 
-            //Ladder1Event();
-
+            //FinalEvent();
+            //Nors1Event();
             /*
             while (lastline > 0)
             {
                 GenerateLine();
             }*/
-            player = new Player(new Vector2(200, 550), new AnimSprite(Content.Load<Texture2D>("player_sprite"), 20, 20, 8, 0.5f),300);           
+
+
+            levelTheme = Content.Load<Song>("Audio\\01_wolfram_ambient");
+            Window.Title = "Jump for your life!";
         }
         
    
         protected override void UnloadContent() { }
+
+        protected override void Update(GameTime gameTime)
+        {
+            input.Update();
+            switch (gameState)
+            {
+                case GameStates.GS_Menu:
+                    Update_Menu(gameTime);
+                    break;
+                case GameStates.GS_Level:
+                    Update_Level(gameTime);
+                    break;               
+                case GameStates.GS_GameOver:
+                    Update_GameOver(gameTime);
+                    break;
+                default:
+                    break;
+            }
+            base.Update(gameTime);
+        }
+
+        void Update_Menu(GameTime gameTime)
+        {
+            if (input.IsNewKeyPressed(Keys.Escape)) this.Exit();
+            if (input.IsNewKeyPressed(Keys.Enter)) { levelInit(); gameState = GameStates.GS_Level; }
+            if (input.IsNewKeyPressed(Keys.Space)) { levelInit(); gameState = GameStates.GS_Level; }
+        
+        }
+
+        private void levelInit()
+        {
+            hud = new HUD();
+            pEngine = new ParticleEngine(this);
+            player = new Player(new Vector2(200, 550), new AnimSprite(Content.Load<Texture2D>("player_sprite"), 20, 20, 8, 0.5f), 300);
+            eternalEvil = new EternalEvil(pEngine);
+            StartingEvent();
+            MediaPlayer.Stop();
+            MediaPlayer.Play(levelTheme);
+        }
+
+        void Update_GameOver(GameTime gameTime)
+        {
+            if (MediaPlayer.State==MediaState.Playing) MediaPlayer.Stop();
+            if (input.IsNewKeyPressed(Keys.Escape)) this.Exit();
+            if (input.IsNewKeyPressed(Keys.Enter)) gameState = GameStates.GS_Menu;
+            if (input.IsNewKeyPressed(Keys.Space)) gameState = GameStates.GS_Menu;
+            eternalEvil.Update(gameTime);
+            pEngine.Update(gameTime);
+            player.Update(gameTime, Vector2.Zero);
+
+        }
 
         /// <summary>
         /// Allows the game to run logic such as updating the world,
         /// checking for collisions, gathering input, and playing audio.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Update(GameTime gameTime)
+        void Update_Level(GameTime gameTime)
         {
-            
 
-            input.Update();
+            if (MediaPlayer.State == MediaState.Stopped || MediaPlayer.State == MediaState.Paused) MediaPlayer.Play(levelTheme);
             camera.Position = new Vector2(screenWidth / 2, player.Pos.Y - 100);
             float elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (elapsed == 0) return;
@@ -143,13 +232,15 @@ namespace LD26_Zayka
             Vector2 R = Vector2.Zero;
             R.Y += G;
 
-
+#if DEBUG
             if (input.IsKeyPressed(Keys.D1)) G = 2000;
             if (input.IsKeyPressed(Keys.D2)) G = 0;
+            if (input.IsKeyPressed(Keys.D3)) player.Pos = new Vector2(200, -30000);
+            if (input.IsNewKeyPressed(Keys.D4)) { Nors2Event(); }
 
             if (input.IsKeyPressed(Keys.W)) player.MoveUp(elapsed);
             if (input.IsKeyPressed(Keys.S)) player.MoveDown(elapsed);
-
+#endif
 
             if (input.IsKeyPressed(Keys.D)) player.MoveRight();
             else
@@ -164,7 +255,8 @@ namespace LD26_Zayka
             R=Collision(R*elapsed*elapsed,player.Velocity*elapsed)/elapsed/elapsed;
             
             player.Update(gameTime,R);
-          
+            if (player.isDead) { gameState = GameStates.GS_GameOver; return; }
+
             for (int i = 0; i < allPlatforms.Count; i++)
             {
                 if (allPlatforms[i].isOnScreen) allPlatforms[i].Update(gameTime);
@@ -173,21 +265,66 @@ namespace LD26_Zayka
             
             for (int i = 0; i < BonusList.Count; i++)
             {
+                if (!BonusList[i].isOnScreen) continue;
                BonusList[i].Update(gameTime);
                if (BonusList[i].toRemove) BonusList.RemoveAt(i--);
             }  
 
-            if (player.Pos.Y-screenHeight/2-1000<lastline) GenerateLine();
+            if (player.Pos.Y-screenHeight/2-1000<lastline&&!player.Victory) GenerateLine();
+            if (lastline < -34000&&!player.Victory) FinalEvent();
+
+
 
             CollisionBonus();
-            base.Update(gameTime);
+            
         }
+
+
+
+        protected override void Draw(GameTime gameTime)
+        {
+            switch (gameState)
+            {
+                case GameStates.GS_Menu:
+                    Draw_Menu(gameTime);
+                    break;
+                case GameStates.GS_Level:
+                    Draw_Level(gameTime);
+                    break;                
+                case GameStates.GS_GameOver:
+                    Draw_GameOver(gameTime);
+                    break;
+                default:
+                    break;
+            }           
+            base.Draw(gameTime);
+        }
+
+
+        void Draw_Menu(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.Black);
+            spriteBatch.Begin();
+            spriteBatch.Draw(menuScreen, Vector2.Zero, Color.White);
+            spriteBatch.End();
+        
+        }
+
+        void Draw_GameOver(GameTime gameTime)
+        {
+
+            Draw_Level(gameTime);
+            spriteBatch.Begin();
+            spriteBatch.Draw(deadScreen, Vector2.Zero, Color.White);
+            spriteBatch.End();
+        }
+        
 
         /// <summary>
         /// This is called when the game should draw itself.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Draw(GameTime gameTime)
+        void Draw_Level(GameTime gameTime)
         {
             ambient = MathHelper.Lerp(0.2f, 0.9f, Math.Abs(player.Pos.Y) / maxHeight);
             ambient = MathHelper.Clamp(ambient, 0.2f, 0.9f);
@@ -231,7 +368,7 @@ namespace LD26_Zayka
 
                 for (int i = 0; i < BonusList.Count; i++)
                 {
-                    BonusList[i].Draw(spriteBatch);
+                    if (BonusList[i].isOnScreen) BonusList[i].Draw(spriteBatch);
                 }
                 spriteBatch.End();
                
@@ -263,7 +400,8 @@ namespace LD26_Zayka
             }
 
 
-            spriteBatch.Draw(startText, new Vector2(0,-500), Color.White);
+            if (player.Pos.Y >-1000) spriteBatch.Draw(startText, new Vector2(0,-500), Color.White);
+            if (player.Pos.Y < -34000) spriteBatch.Draw(winScreen, new Vector2(0, -34000-1500), Color.White);
             spriteBatch.End();
 
             spriteBatch.Begin();
@@ -284,7 +422,7 @@ namespace LD26_Zayka
             spriteBatch.DrawString(font, "p= " + pEngine.Count, new Vector2(10, 5 * 12), Color.LightGreen); 
             spriteBatch.End();
 #endif
-            base.Draw(gameTime);
+       
         }
 
 
@@ -340,30 +478,36 @@ namespace LD26_Zayka
         {
             foreach (var bonus in BonusList)
             {
-                //if (bonus.isOnScreen)
-                if (bonus.rect.Intersects(player.rect))
+                if (bonus.isOnScreen)
                 {
-                    if (PixelCollision(bonus, player))
+                    if (bonus.rect.Intersects(player.rect))
                     {
-                        bonus.Interact(player);
+                        if (PixelCollision(bonus, player))
+                        {
+                            bonus.Interact(player);
+                        }
                     }
                 }
             }
         }
+
         public static bool PixelCollision(GameObject first, GameObject second)
         {
             Rectangle firstRect = first.rect;
             Rectangle secondRect = second.rect;
-            Color[] firstData = new Color[first.Width * first.Height];
-            Color[] secondData = new Color[second.Width * second.Height];
-
-            firstData = first.CurrentData;
-            secondData = second.CurrentData;
 
             int top = Math.Max(firstRect.Top, secondRect.Top);
             int bottom = Math.Min(firstRect.Bottom, secondRect.Bottom);
             int left = Math.Max(firstRect.Left, secondRect.Left);
             int right = Math.Min(firstRect.Right, secondRect.Right);
+
+            if (top > bottom) return false;
+            if (left > right) return false;
+
+            Color[] firstData = new Color[first.Width * first.Height];
+            Color[] secondData = new Color[second.Width * second.Height];
+            firstData = first.CurrentData;
+            secondData = second.CurrentData;
 
             for (int y = top; y < bottom; y++)
             {
@@ -383,15 +527,15 @@ namespace LD26_Zayka
 
         public void GenerateLine()
         {
-            if (rnd.NextDouble()*100 > 95)
+            if (rnd.NextDouble()*100 > 96)
             {
                 int eventN = rnd.Next(4);
                 if (eventN == 0) { Ladder1Event(); }
                 if (eventN == 1) { Ladder2Event(); }
                 if (eventN == 2) { Nors1Event(); }
                 if (eventN == 3) { Nors2Event(); }
-                GenerateRandomLine();
-                GenerateRandomLine();
+                //GenerateRandomLine();
+                //GenerateRandomLine();
             }
             else
                 GenerateRandomLine();
@@ -444,20 +588,13 @@ namespace LD26_Zayka
             bmp.UnlockBits(bmpData);
             bmp.Save(filename);
         }
-
-        void DrawEternalEvil()
-        {
-
-        }
-
-
-
+     
         private void StartingEvent()
         {
             Platform platform;
             for (int i = 0; i < screenWidth; i += 60)
             {
-                platform = new Platform(new Vector2(i, 600), PlatfotmType.RandomAll);
+                platform = new Platform(new Vector2(i, 600), PlatfotmType.Safe);
                 allPlatforms.Add(platform);
                 platform = new Platform(new Vector2(i, 620), PlatfotmType.Safe);
                 allPlatforms.Add(platform);
@@ -476,6 +613,14 @@ namespace LD26_Zayka
                 platform = new Platform(new Vector2(i, 760), PlatfotmType.Safe);
                 allPlatforms.Add(platform);
                 platform = new Platform(new Vector2(i, 780), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 800), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 820), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 840), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(i, 860), PlatfotmType.Safe);
                 allPlatforms.Add(platform);
             }
 
@@ -691,6 +836,39 @@ namespace LD26_Zayka
             lastline -= 600;
         }
 
+
+        void FinalEvent()
+        {
+            GenerateLine();
+            GenerateLine();
+            Platform platform;
+            for (int i = 0; i < screenWidth; i += 120)
+            {
+                platform = new Platform(new Vector2(i, lastline), PlatfotmType.RandomAll);
+                allPlatforms.Add(platform);
+            }
+
+            for (int i = 0; i < 700; i += 200)
+            {
+                platform = new Platform(new Vector2(screenWidth/2,lastline-i), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(screenWidth / 2-60, lastline - i-100), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(screenWidth / 2 + 60, lastline - i - 100), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+            }
+
+            for (int i = 0; i < screenWidth/2-120; i += 60)
+            {
+                platform = new Platform(new Vector2(i, lastline-800), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+                platform = new Platform(new Vector2(screenWidth-i, lastline - 800), PlatfotmType.Safe);
+                allPlatforms.Add(platform);
+            }
+
+            lastline -= 16000;
+            player.Victory = true;
+        }
 
     }
 }

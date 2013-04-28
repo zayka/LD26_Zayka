@@ -16,6 +16,7 @@ namespace LD26_Zayka
         Texture2D HUDBack;
         Texture2D arrowTex;
         Texture2D lineTex;
+        Texture2D solarTex;
 
 
         public HUD()
@@ -24,6 +25,7 @@ namespace LD26_Zayka
             HUDMain = game.Content.Load<Texture2D>("hud");
             HUDBack = game.Content.Load<Texture2D>("hudBack");
             arrowTex = game.Content.Load<Texture2D>("arrow");
+            solarTex = game.Content.Load<Texture2D>("solar");
             playerHPRect=new Rectangle(28,20,240,25);
             playerHPBackRect=new Rectangle(22,54,252,37);
 
@@ -56,7 +58,7 @@ namespace LD26_Zayka
             float evilL = MathHelper.Lerp(680, 50, newpos / game.maxHeight);
             sb.Draw(arrowTex, new Vector2(Game1.screenWidth - 40, evilL), Color.Red);
 
-
+            sb.Draw(solarTex, new Vector2(Game1.screenWidth - 45, 45), Color.Yellow);
             /*
             if (game.CurrentLevel.LevelBoss != null)
             {

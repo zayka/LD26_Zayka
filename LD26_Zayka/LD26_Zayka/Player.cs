@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Audio;
 
 namespace LD26_Zayka
 {
@@ -18,6 +19,8 @@ namespace LD26_Zayka
         public float hitpoints;
         public float maxHitpoints=100;
         ParticleEmitter pEmitter;
+        public bool Victory = false;
+        public bool isDead=false;
 
         public Vector2 Velocity { get { return velocity; } }
 
@@ -44,22 +47,28 @@ namespace LD26_Zayka
 
 
         public void Update(GameTime gt, Vector2 R)
-        {            
-            velocity += R * (float)gt.ElapsedGameTime.TotalSeconds;
-            velocity.Y = MathHelper.Clamp(velocity.Y, -1000 , +1000);
-            Update(gt);
-            if (landing) { velocity.Y = 0; landing = false; }
-            //pos = Vector2.Clamp(pos, Vector2.Zero + Origin/2, new Vector2(Game1.screenWidth, Game1.screenHeight) - Origin/2);
-            pos.X = MathHelper.Clamp(pos.X, 0 + Origin.X / 2, Game1.screenWidth - Origin.X / 2);
+        {
+            if (!isDead)
+            {
+                velocity += R * (float)gt.ElapsedGameTime.TotalSeconds;
+                velocity.Y = MathHelper.Clamp(velocity.Y, -1000, +1000);
+                Update(gt);
+                if (landing) { velocity.Y = 0; landing = false; }
+                //pos = Vector2.Clamp(pos, Vector2.Zero + Origin/2, new Vector2(Game1.screenWidth, Game1.screenHeight) - Origin/2);
+                pos.X = MathHelper.Clamp(pos.X, 0 + Origin.X / 2, Game1.screenWidth - Origin.X / 2);
+            }
             pEmitter.Update(gt);
             pEmitter.Pos = pos;
             if (pos.Y > Cnt.game.eternalEvil.Pos - 550) { hitpoints -= 50*(float)gt.ElapsedGameTime.TotalSeconds; }
             if (pos.Y > Cnt.game.eternalEvil.Pos-200) { hitpoints = 0; }
-            if (hitpoints < 0) Die();
+            if (hitpoints <= 0) Die();
         }
 
         public void Die()
-        { }
+        {
+            velocity = Vector2.Zero;
+            isDead = true;
+        }
 
         public void HitY()
         {
@@ -78,6 +87,8 @@ namespace LD26_Zayka
             {
                 velocity.Y -= maxJump;
                 isJumping = true;
+                Cue cyd = Cnt.game.soundBank.GetCue("Jump");
+                cyd.Play();
             }
         }
 
@@ -101,7 +112,7 @@ namespace LD26_Zayka
 
         public void MoveUp(float dy)
         {
-            pos.Y -= maxSpeed*dy;
+            pos.Y -= 8*maxSpeed*dy;
         }
         public void MoveDown(float dy)
         {
