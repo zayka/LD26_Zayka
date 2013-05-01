@@ -243,9 +243,9 @@ namespace LD26_Zayka
             if (input.IsKeyPressed(Keys.S)) player.MoveDown(elapsed);
 #endif
 
-            if (input.IsKeyPressed(Keys.D)) player.MoveRight();
+            if (input.IsKeyPressed(Keys.D) || input.IsKeyPressed(Keys.Right)) player.MoveRight();
             else
-                if (input.IsKeyPressed(Keys.A)) player.MoveLeft();
+                if (input.IsKeyPressed(Keys.A)||input.IsKeyPressed(Keys.Left)) player.MoveLeft();
                 else player.Stop();
             if (input.IsNewKeyPressed(Keys.Space)) player.Jump();
             if (input.IsLeftButtonClick()) player.Jump();
@@ -344,17 +344,13 @@ namespace LD26_Zayka
 
 
                 GraphicsDevice.SetRenderTarget(null);
-
                 GraphicsDevice.Clear(new Color(0, 255, 0, 255));
-               
-
 
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, camera.View);
                 //spriteBatch.Begin();
                 spriteBatch.Draw(bg, new Vector2(0,-camera.View.Translation.Y), Color.White);
                 spriteBatch.Draw(shadows, new Vector2(0, -camera.View.Translation.Y), Color.White);
                 spriteBatch.End();
-
 
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive, null, null, null, null, camera.View);
                 pEngine.Draw();
@@ -371,8 +367,7 @@ namespace LD26_Zayka
                 {
                     if (BonusList[i].isOnScreen) BonusList[i].Draw(spriteBatch);
                 }
-                spriteBatch.End();
-               
+                spriteBatch.End();               
             }
             else
             {
@@ -406,12 +401,8 @@ namespace LD26_Zayka
             spriteBatch.End();
 
             spriteBatch.Begin();
-
             hud.Draw(spriteBatch);
             spriteBatch.End();
-
-
-
 
 #if DEBUG
             spriteBatch.Begin();
@@ -435,7 +426,7 @@ namespace LD26_Zayka
             Vector2 prevPos = player.Pos;
             float dx = dxdy.X;
             float dy = dxdy.Y;
-            for (int i = allPlatforms.Count - 1; i > 0 && i > allPlatforms.Count - 200; i--)
+            for (int i = allPlatforms.Count - 1; i > 0 && i > allPlatforms.Count - 600; i--)
             //foreach (var platform in allPlatforms)
             {
                 Platform platform = allPlatforms[i];
@@ -523,9 +514,7 @@ namespace LD26_Zayka
                 }
             }
             return false;
-
         }
-
 
         public void GenerateLine()
         {
@@ -541,7 +530,6 @@ namespace LD26_Zayka
             }
             else
                 GenerateRandomLine();
-
         }
 
         public void GenerateRandomLine()
@@ -642,7 +630,6 @@ namespace LD26_Zayka
         {
             
          Platform platform;
-
          platform = new Platform(new Vector2(screenWidth / 2 - 120, lastline), PlatfotmType.Safe);
             allPlatforms.Add(platform);
             platform = new Platform(new Vector2(screenWidth / 2 - 180, lastline), PlatfotmType.Safe);
@@ -814,7 +801,6 @@ namespace LD26_Zayka
 
             lastline -= 600;
         }
-
 
         void FinalEvent()
         {
